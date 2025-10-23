@@ -14,12 +14,12 @@
         </header>
 
         <div class="game-info">
+            <div class="balance">
+                <span>Balance: $<span id="balance">1000</span></span>
+            </div>
             <div class="score">
                 <span>Wins: <span id="wins">0</span></span>
                 <span>Losses: <span id="losses">0</span></span>
-            </div>
-            <div class="balance">
-                <span>Balance: $<span id="balance">1000</span></span>
             </div>
         </div>
 
@@ -38,13 +38,41 @@
         </div>
 
         <div class="betting-area">
-            <label for="bet-amount">Bet Amount: $</label>
-            <input type="number" id="bet-amount" min="10" max="1000" value="50" placeholder="Enter bet amount">
-            <div class="bet-buttons">
-                <button class="bet-btn" data-bet="25">$25</button>
-                <button class="bet-btn" data-bet="50">$50</button>
-                <button class="bet-btn" data-bet="100">$100</button>
-                <button class="bet-btn" data-bet="250">$250</button>
+            <div class="chip-rack">
+                <h4>Select Chips</h4>
+                <div class="chip-selection">
+                    <div class="chip $1" data-value="1" title="Click to add $1 chip">
+                        <span class="chip-value">$1</span>
+                    </div>
+                    <div class="chip $5" data-value="5" title="Click to add $5 chip">
+                        <span class="chip-value">$5</span>
+                    </div>
+                    <div class="chip $10" data-value="10" title="Click to add $10 chip">
+                        <span class="chip-value">$10</span>
+                    </div>
+                    <div class="chip $25" data-value="25" title="Click to add $25 chip">
+                        <span class="chip-value">$25</span>
+                    </div>
+                    <div class="chip $50" data-value="50" title="Click to add $50 chip">
+                        <span class="chip-value">$50</span>
+                    </div>
+                    <div class="chip $100" data-value="100" title="Click to add $100 chip">
+                        <span class="chip-value">$100</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="betting-table">
+                <div class="betting-circle" id="betting-circle">
+                    <div class="betting-total">
+                        <span id="current-bet">$0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bet-controls">
+                <button id="clear-bet" class="btn chip-control">Clear Bet</button>
+                <button id="all-in" class="btn chip-control">All In</button>
             </div>
         </div>
 

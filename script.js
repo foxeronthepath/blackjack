@@ -8,6 +8,7 @@ class BlackjackGame {
         this.wins = 0;
         this.losses = 0;
         this.currentBet = 0;
+        this.placedChips = []; // Array to track placed chips
         
         this.initializeElements();
         this.attachEventListeners();
@@ -23,12 +24,15 @@ class BlackjackGame {
         this.balanceEl = document.getElementById('balance');
         this.winsEl = document.getElementById('wins');
         this.lossesEl = document.getElementById('losses');
-        this.betAmountEl = document.getElementById('bet-amount');
+        this.currentBetEl = document.getElementById('current-bet');
+        this.bettingCircleEl = document.getElementById('betting-circle');
         
         this.dealBtn = document.getElementById('deal-btn');
         this.hitBtn = document.getElementById('hit-btn');
         this.standBtn = document.getElementById('stand-btn');
         this.newGameBtn = document.getElementById('new-game-btn');
+        this.clearBetBtn = document.getElementById('clear-bet');
+        this.allInBtn = document.getElementById('all-in');
         
         // Message area for styling
         this.messageArea = this.gameMessageEl.parentElement;
@@ -39,17 +43,22 @@ class BlackjackGame {
         this.hitBtn.addEventListener('click', () => this.hit());
         this.standBtn.addEventListener('click', () => this.stand());
         this.newGameBtn.addEventListener('click', () => this.newGame());
+        this.clearBetBtn.addEventListener('click', () => this.clearBet());
+        this.allInBtn.addEventListener('click', () => this.allIn());
         
-        // Bet button listeners
-        document.querySelectorAll('.bet-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const betAmount = parseInt(btn.dataset.bet);
-                if (betAmount <= this.balance) {
-                    this.betAmountEl.value = betAmount;
-                } else {
-                    this.updateMessageArea('lose', 'Insufficient balance for that bet!');
-                }
+        // Chip selection listeners
+        document.querySelectorAll('.chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const value = parseInt(chip.dataset.value);
+                this.addChip(value);
             });
+        });
+        
+        // Betting circle click to remove chips
+        this.bettingCircleEl.addEventListener('click', () => {
+            if (this.placedChips.length > 0) {
+                this.removeLastChip();
+            }
         });
     }
 
@@ -76,19 +85,17 @@ class BlackjackGame {
     }
 
     dealCards() {
-        const betAmount = parseInt(this.betAmountEl.value);
-        
-        if (isNaN(betAmount) || betAmount <= 0) {
-            this.updateMessageArea('lose', 'Please enter a valid bet amount!');
+        if (this.currentBet <= 0) {
+            this.updateMessageArea('lose', 'Please place a bet first!');
             return;
         }
         
-        if (betAmount > this.balance) {
+        if (this.currentBet > this.balance) {
             this.updateMessageArea('lose', 'Insufficient balance!');
             return;
         }
         
-        if (betAmount < 10) {
+        if (this.currentBet < 10) {
             this.updateMessageArea('lose', 'Minimum bet is $10!');
             return;
         }
@@ -98,8 +105,7 @@ class BlackjackGame {
             return;
         }
 
-        this.currentBet = betAmount;
-        this.balance -= betAmount;
+        this.balance -= this.currentBet;
         this.deck = this.createDeck();
         this.dealerCards = [];
         this.playerCards = [];
@@ -289,8 +295,8 @@ class BlackjackGame {
         if (showDealerCard || this.gameState === 'finished') {
             this.dealerScoreEl.textContent = this.getScore(this.dealerCards);
         } else if (this.dealerCards.length > 0) {
-            // Hide dealer's first card score - only show the visible card
-            const visibleDealerCards = [this.dealerCards[0]];
+            // Show only the visible dealer card score (second card, not the hidden first card)
+            const visibleDealerCards = this.dealerCards.slice(1);
             this.dealerScoreEl.textContent = this.getScore(visibleDealerCards);
         } else {
             this.dealerScoreEl.textContent = '0';
@@ -358,6 +364,8 @@ class BlackjackGame {
         this.dealerCards = [];
         this.playerCards = [];
         this.currentBet = 0;
+        this.placedChips = [];
+        this.updateBetDisplay();
         this.updateMessageArea('waiting', 'Place your bet and click "Deal Cards" to start!');
         this.updateDisplay();
         this.updateButtons();
@@ -377,6 +385,70 @@ class BlackjackGame {
         
         // Update the message text
         this.gameMessageEl.textContent = message;
+    }
+
+    // Chip management methods
+    addChip(value) {
+        if (this.gameState !== 'waiting') {
+            this.updateMessageArea('lose', 'Cannot bet during game!');
+            return;
+        }
+        
+        if (this.currentBet + value > this.balance) {
+            this.updateMessageArea('lose', 'Insufficient balance for that chip!');
+            return;
+        }
+        
+        this.currentBet += value;
+        this.placedChips.push(value);
+        this.updateBetDisplay();
+    }
+    
+    removeLastChip() {
+        if (this.placedChips.length === 0) return;
+        
+        const removedChip = this.placedChips.pop();
+        this.currentBet -= removedChip;
+        this.updateBetDisplay();
+    }
+    
+    clearBet() {
+        if (this.gameState !== 'waiting') {
+            this.updateMessageArea('lose', 'Cannot clear bet during game!');
+            return;
+        }
+        
+        this.currentBet = 0;
+        this.placedChips = [];
+        this.updateBetDisplay();
+    }
+    
+    allIn() {
+        if (this.gameState !== 'waiting') {
+            this.updateMessageArea('lose', 'Cannot bet during game!');
+            return;
+        }
+        
+        this.clearBet();
+        this.currentBet = this.balance;
+        this.placedChips = [this.balance];
+        this.updateBetDisplay();
+    }
+    
+    updateBetDisplay() {
+        this.currentBetEl.textContent = `$${this.currentBet}`;
+    }
+    
+    getChipColor(value) {
+        const colors = {
+            1: 'linear-gradient(135deg, #ef4444, #dc2626)',
+            5: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+            10: 'linear-gradient(135deg, #10b981, #059669)',
+            25: 'linear-gradient(135deg, #f59e0b, #d97706)',
+            50: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+            100: 'linear-gradient(135deg, #f97316, #ea580c)'
+        };
+        return colors[value] || 'linear-gradient(135deg, #6b7280, #4b5563)';
     }
 }
 
