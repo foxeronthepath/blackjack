@@ -29,6 +29,9 @@ class BlackjackGame {
         this.hitBtn = document.getElementById('hit-btn');
         this.standBtn = document.getElementById('stand-btn');
         this.newGameBtn = document.getElementById('new-game-btn');
+        
+        // Message area for styling
+        this.messageArea = this.gameMessageEl.parentElement;
     }
 
     attachEventListeners() {
@@ -44,7 +47,7 @@ class BlackjackGame {
                 if (betAmount <= this.balance) {
                     this.betAmountEl.value = betAmount;
                 } else {
-                    this.gameMessageEl.textContent = 'Insufficient balance for that bet!';
+                    this.updateMessageArea('lose', 'Insufficient balance for that bet!');
                 }
             });
         });
@@ -76,22 +79,22 @@ class BlackjackGame {
         const betAmount = parseInt(this.betAmountEl.value);
         
         if (isNaN(betAmount) || betAmount <= 0) {
-            this.gameMessageEl.textContent = 'Please enter a valid bet amount!';
+            this.updateMessageArea('lose', 'Please enter a valid bet amount!');
             return;
         }
         
         if (betAmount > this.balance) {
-            this.gameMessageEl.textContent = 'Insufficient balance!';
+            this.updateMessageArea('lose', 'Insufficient balance!');
             return;
         }
         
         if (betAmount < 10) {
-            this.gameMessageEl.textContent = 'Minimum bet is $10!';
+            this.updateMessageArea('lose', 'Minimum bet is $10!');
             return;
         }
 
         if (this.gameState !== 'waiting') {
-            this.gameMessageEl.textContent = 'Please start a new game first!';
+            this.updateMessageArea('lose', 'Please start a new game first!');
             return;
         }
 
@@ -111,17 +114,18 @@ class BlackjackGame {
         this.updateDisplay();
         this.updateButtons();
         this.updateStats();
+        this.updateMessageArea('playing', 'Game in progress! Hit or Stand?');
         this.checkForBlackjack();
     }
 
     hit() {
         if (this.gameState !== 'playing') {
-            this.gameMessageEl.textContent = 'Cannot hit right now!';
+            this.updateMessageArea('lose', 'Cannot hit right now!');
             return;
         }
         
         if (this.deck.length === 0) {
-            this.gameMessageEl.textContent = 'No more cards in deck!';
+            this.updateMessageArea('lose', 'No more cards in deck!');
             return;
         }
         
@@ -131,19 +135,19 @@ class BlackjackGame {
         const playerScore = this.getScore(this.playerCards);
         if (playerScore > 21) {
             this.gameState = 'finished';
-            this.gameMessageEl.textContent = 'Bust! You lose.';
+            this.updateMessageArea('lose', 'Bust! You lose.');
             this.losses++;
             this.updateButtons();
             this.updateStats();
         } else if (playerScore === 21) {
-            this.gameMessageEl.textContent = '21! You must stand.';
+            this.updateMessageArea('playing', '21! You must stand.');
             // Don't automatically stand, let player decide
         }
     }
 
     stand() {
         if (this.gameState !== 'playing') {
-            this.gameMessageEl.textContent = 'Cannot stand right now!';
+            this.updateMessageArea('lose', 'Cannot stand right now!');
             return;
         }
         
@@ -153,7 +157,7 @@ class BlackjackGame {
     }
 
     dealerPlay() {
-        this.gameMessageEl.textContent = 'Dealer is playing...';
+        this.updateMessageArea('playing', 'Dealer is playing...');
         
         // Show dealer's hidden card
         this.updateDisplay(true);
@@ -207,18 +211,18 @@ class BlackjackGame {
         const dealerScore = this.getScore(this.dealerCards);
         
         if (dealerScore > 21) {
-            this.gameMessageEl.textContent = 'Dealer busts! You win!';
+            this.updateMessageArea('win', 'Dealer busts! You win!');
             this.balance += this.currentBet * 2;
             this.wins++;
         } else if (playerScore > dealerScore) {
-            this.gameMessageEl.textContent = 'You win!';
+            this.updateMessageArea('win', 'You win!');
             this.balance += this.currentBet * 2;
             this.wins++;
         } else if (dealerScore > playerScore) {
-            this.gameMessageEl.textContent = 'Dealer wins!';
+            this.updateMessageArea('lose', 'Dealer wins!');
             this.losses++;
         } else {
-            this.gameMessageEl.textContent = 'Push! It\'s a tie.';
+            this.updateMessageArea('tie', 'Push! It\'s a tie.');
             this.balance += this.currentBet;
         }
         
@@ -232,20 +236,20 @@ class BlackjackGame {
         
         if (playerScore === 21 && dealerScore === 21) {
             this.gameState = 'finished';
-            this.gameMessageEl.textContent = 'Both have blackjack! Push!';
+            this.updateMessageArea('tie', 'Both have blackjack! Push!');
             this.balance += this.currentBet;
             this.updateButtons();
             this.updateStats();
         } else if (playerScore === 21) {
             this.gameState = 'finished';
-            this.gameMessageEl.textContent = 'Blackjack! You win!';
+            this.updateMessageArea('win', 'Blackjack! You win!');
             this.balance += Math.floor(this.currentBet * 2.5);
             this.wins++;
             this.updateButtons();
             this.updateStats();
         } else if (dealerScore === 21) {
             this.gameState = 'finished';
-            this.gameMessageEl.textContent = 'Dealer has blackjack! You lose.';
+            this.updateMessageArea('lose', 'Dealer has blackjack! You lose.');
             this.losses++;
             this.updateButtons();
             this.updateStats();
@@ -354,14 +358,25 @@ class BlackjackGame {
         this.dealerCards = [];
         this.playerCards = [];
         this.currentBet = 0;
-        this.gameMessageEl.textContent = 'Place your bet and click "Deal Cards" to start!';
+        this.updateMessageArea('waiting', 'Place your bet and click "Deal Cards" to start!');
         this.updateDisplay();
         this.updateButtons();
         
         if (this.balance < 10) {
-            this.gameMessageEl.textContent = 'Game over! You\'re out of money. Refresh to restart.';
+            this.updateMessageArea('lose', 'Game over! You\'re out of money. Refresh to restart.');
             this.dealBtn.disabled = true;
         }
+    }
+
+    updateMessageArea(type, message) {
+        // Remove all existing classes
+        this.messageArea.classList.remove('win', 'lose', 'tie', 'playing', 'waiting');
+        
+        // Add the new class
+        this.messageArea.classList.add(type);
+        
+        // Update the message text
+        this.gameMessageEl.textContent = message;
     }
 }
 
