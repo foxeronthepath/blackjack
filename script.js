@@ -13,6 +13,7 @@ class BlackjackGame {
         this.initializeElements();
         this.attachEventListeners();
         this.updateDisplay();
+        this.updateButtons();
     }
 
     initializeElements() {
@@ -176,6 +177,7 @@ class BlackjackGame {
         const dealerScore = this.getScore(this.dealerCards);
         
         // Dealer must hit on soft 17 (A + 6 = 17, but can hit)
+        // Dealer stands on hard 17 or higher
         const shouldHit = dealerScore < 17 || (dealerScore === 17 && this.hasSoft17(this.dealerCards));
         
         if (shouldHit) {
@@ -208,7 +210,8 @@ class BlackjackGame {
             }
         }
         
-        // Check if it's a soft 17 (contains an ace counted as 11)
+        // Check if it's a soft 17 (contains an ace that can be counted as 11 without busting)
+        // A soft 17 means we have exactly 17 with at least one ace counted as 11
         return score === 17 && aces > 0;
     }
 
@@ -325,30 +328,57 @@ class BlackjackGame {
     }
 
     updateButtons() {
+        // Reset all button visibility and state
+        this.dealBtn.style.display = 'none';
+        this.hitBtn.style.display = 'none';
+        this.standBtn.style.display = 'none';
+        this.newGameBtn.style.display = 'none';
+        // Always show betting controls, but control their disabled state
+        this.clearBetBtn.style.display = 'inline-block';
+        this.allInBtn.style.display = 'inline-block';
+
         switch (this.gameState) {
             case 'waiting':
-                this.dealBtn.disabled = false;
-                this.hitBtn.disabled = true;
-                this.standBtn.disabled = true;
-                this.newGameBtn.disabled = true;
+                // Always show Deal Cards button when waiting
+                this.dealBtn.style.display = 'inline-block';
+                // Enable/disable based on bet validity
+                if (this.currentBet >= 10 && this.currentBet <= this.balance) {
+                    this.dealBtn.disabled = false;
+                } else {
+                    this.dealBtn.disabled = true;
+                }
+                // Enable betting controls when waiting
+                this.clearBetBtn.disabled = false;
+                this.allInBtn.disabled = false;
                 break;
             case 'playing':
-                this.dealBtn.disabled = true;
+                // Show Hit and Stand buttons during play
+                this.hitBtn.style.display = 'inline-block';
                 this.hitBtn.disabled = false;
+                this.standBtn.style.display = 'inline-block';
                 this.standBtn.disabled = false;
+                // Show New Game button as alternative
+                this.newGameBtn.style.display = 'inline-block';
                 this.newGameBtn.disabled = false;
+                // Disable betting controls during play
+                this.clearBetBtn.disabled = true;
+                this.allInBtn.disabled = true;
                 break;
             case 'dealer-turn':
-                this.dealBtn.disabled = true;
-                this.hitBtn.disabled = true;
-                this.standBtn.disabled = true;
+                // Only show New Game button during dealer's turn
+                this.newGameBtn.style.display = 'inline-block';
                 this.newGameBtn.disabled = false;
+                // Disable betting controls during dealer's turn
+                this.clearBetBtn.disabled = true;
+                this.allInBtn.disabled = true;
                 break;
             case 'finished':
-                this.dealBtn.disabled = true;
-                this.hitBtn.disabled = true;
-                this.standBtn.disabled = true;
+                // Only show New Game button when game is finished
+                this.newGameBtn.style.display = 'inline-block';
                 this.newGameBtn.disabled = false;
+                // Disable betting controls when game is finished
+                this.clearBetBtn.disabled = true;
+                this.allInBtn.disabled = true;
                 break;
         }
     }
@@ -372,7 +402,14 @@ class BlackjackGame {
         
         if (this.balance < 10) {
             this.updateMessageArea('lose', 'Game over! You\'re out of money. Refresh to restart.');
-            this.dealBtn.disabled = true;
+            // Hide all buttons when out of money
+            this.dealBtn.style.display = 'none';
+            this.hitBtn.style.display = 'none';
+            this.standBtn.style.display = 'none';
+            this.newGameBtn.style.display = 'none';
+            // Keep betting controls visible but disabled when out of money
+            this.clearBetBtn.disabled = true;
+            this.allInBtn.disabled = true;
         }
     }
 
@@ -402,6 +439,7 @@ class BlackjackGame {
         this.currentBet += value;
         this.placedChips.push(value);
         this.updateBetDisplay();
+        this.updateButtons(); // Update button visibility after placing bet
     }
     
     removeLastChip() {
@@ -410,6 +448,7 @@ class BlackjackGame {
         const removedChip = this.placedChips.pop();
         this.currentBet -= removedChip;
         this.updateBetDisplay();
+        this.updateButtons(); // Update button visibility after removing bet
     }
     
     clearBet() {
@@ -421,6 +460,7 @@ class BlackjackGame {
         this.currentBet = 0;
         this.placedChips = [];
         this.updateBetDisplay();
+        this.updateButtons(); // Update button visibility after clearing bet
     }
     
     allIn() {
@@ -433,6 +473,7 @@ class BlackjackGame {
         this.currentBet = this.balance;
         this.placedChips = [this.balance];
         this.updateBetDisplay();
+        this.updateButtons(); // Update button visibility after all-in bet
     }
     
     updateBetDisplay() {
